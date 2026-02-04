@@ -1,4 +1,4 @@
-name: Sayann70 Spes Builder
+name: Sayann70 Spes Builder Final
 on:
   workflow_dispatch:
 
@@ -13,6 +13,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y bc gperf zip curl libxml2-utils build-essential git-core python3 rsync
+          # GitHub runnerda 30GB+ joy ochish
           sudo rm -rf /usr/share/dotnet /etc/mysql /usr/local/lib/android /opt/ghc
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
@@ -24,23 +25,21 @@ jobs:
           git config --global user.email "build@github.com"
           git config --global user.name "Builder"
           mkdir ~/rom && cd ~/rom
-          # ArrowOS 13.1
+          # ArrowOS 13.1 bazasi
           repo init -u https://github.com/ArrowOS/android_manifest.git -b arrow-13.1 --depth=1
           
-          # Sayann70 drayverlari uchun Local Manifest
+          # Sayann70 uchun maxsus sozlangan Manifest
           mkdir -p .repo/local_manifests
           cat <<EOF > .repo/local_manifests/spes.xml
           <?xml version="1.0" encoding="UTF-8"?>
           <manifest>
             <project name="sayann70/device_xiaomi_spes" path="device/xiaomi/spes" remote="github" revision="13" />
-            
-            <project name="sayann70/kernel_xiaomi_spes" path="kernel/xiaomi/spes" remote="github" revision="13" />
-            
-            <project name="sayann70/vendor_xiaomi_spes" path="vendor/xiaomi/spes" remote="github" revision="13" />
+            <project name="sayann70/kernel_xiaomi_spes" path="kernel/xiaomi/spes" remote="github" revision="13.0" />
+            <project name="sayann70/vendor_xiaomi_spes" path="vendor/xiaomi/spes" remote="github" revision="13.0" />
           </manifest>
           EOF
           
-          # Sync qilish (Xatolarni chetlab o'tish uchun)
+          # Force sync va keraksiz yuklamalarni cheklash
           repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
 
       - name: Start Build
@@ -49,6 +48,7 @@ jobs:
           export ARROW_GAPPS=true
           export ALLOW_MISSING_DEPENDENCIES=true
           . build/envsetup.sh
+          # Spes qurilmasi uchun ArrowOS buildini boshlash
           lunch arrow_spes-userdebug
           mka bacon -j$(nproc --all)
           
