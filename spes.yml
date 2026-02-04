@@ -1,0 +1,54 @@
+name: Redmi Note 11 Spes Build
+
+on:
+  workflow_dispatch: # Buildni qo'lda boshlash uchun
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Maximize Build Space
+        uses: easimon/maximize-build-space@main
+        with:
+          root-reserve-mb: 512
+          swap-size-mb: 10240 # 10GB Swap qo'shish (RAM yetishi uchun)
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
+
+      - name: Install Dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3
+
+      - name: Sync ROM
+        run: |
+          mkdir ~/rom && cd ~/rom
+          git config --global user.email "build@github.com"
+          git config --global user.name "Builder"
+          repo init -u https://github.com/PixelExperience/manifest.git -b thirteen --depth=1
+          mkdir -p .repo/local_manifests
+          cat <<EOF > .repo/local_manifests/spes.xml
+          <?xml version="1.0" encoding="UTF-8"?>
+          <manifest>
+            <project name="sayann70/device_xiaomi_spes" path="device/xiaomi/spes" remote="github" revision="13" />
+            <project name="sayann70/kernel_xiaomi_spes" path="kernel/xiaomi/spes" remote="github" revision="thirteen" />
+            <project name="sayann70/vendor_xiaomi_spes" path="vendor/xiaomi/spes" remote="github" revision="thirteen" />
+          </manifest>
+          EOF
+          repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+
+      - name: Build ROM
+        run: |
+          cd ~/rom
+          . build/envsetup.sh
+          lunch aosp_spes-userdebug
+          export ALLOW_MISSING_DEPENDENCIES=true
+          mka bacon -j$(nproc --all)
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PixelExperience_Spes
+          path: ~/rom/out/target/product/spes/*.zip
+          
