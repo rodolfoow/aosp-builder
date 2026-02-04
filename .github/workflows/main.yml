@@ -1,4 +1,4 @@
-name: Sayann70 Spes Builder Final Fixed
+name: Sayann70 Manual Clone Build
 on:
   workflow_dispatch:
 
@@ -9,37 +9,45 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Cleanup and Setup
+      - name: Cleanup Space
         run: |
           sudo apt-get update
           sudo apt-get install -y bc gperf zip curl libxml2-utils build-essential git-core python3 rsync
+          # GitHub runnerda joyni tozalash (Eng muhim qism)
           sudo rm -rf /usr/share/dotnet /etc/mysql /usr/local/lib/android /opt/ghc
+          docker rmi $(docker images -q) 2>/dev/null || true
+          
+      - name: Setup Repo
+        run: |
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
           sudo ln -sf ~/bin/repo /usr/bin/repo
-
-      - name: ROM Source Sync
-        run: |
           git config --global user.email "build@github.com"
           git config --global user.name "Builder"
+
+      - name: Clone Sources Manually
+        run: |
           mkdir ~/rom && cd ~/rom
+          # 1. ArrowOS bazasini yuklash
           repo init -u https://github.com/ArrowOS/android_manifest.git -b arrow-13.1 --depth=1
-          
-          # Manifestni Sayann70-ning haqiqiy branch nomlariga mosladik
-          mkdir -p .repo/local_manifests
-          cat <<EOF > .repo/local_manifests/spes.xml
-          <?xml version="1.0" encoding="UTF-8"?>
-          <manifest>
-            <project name="sayann70/device_xiaomi_spes" path="device/xiaomi/spes" remote="github" revision="13" />
-            
-            <project name="sayann70/kernel_xiaomi_spes" path="kernel/xiaomi/spes" remote="github" revision="thirteen" />
-            
-            <project name="sayann70/vendor_xiaomi_spes" path="vendor/xiaomi/spes" remote="github" revision="thirteen" />
-          </manifest>
-          EOF
-          
           repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+          
+          # 2. DRAYVERLARNI QO'LDA YUKLASH (Manifestsiz)
+          # Bu usul "Network failed" xatosini oldini oladi
+          
+          echo "Drayverlar yuklanmoqda..."
+          
+          # Device Tree (Branch: 13)
+          git clone --depth=1 https://github.com/sayann70/device_xiaomi_spes -b 13 device/xiaomi/spes
+          
+          # Kernel Tree (Branch: thirteen) - Almashgan ekran uchun
+          git clone --depth=1 https://github.com/sayann70/kernel_xiaomi_spes -b thirteen kernel/xiaomi/spes
+          
+          # Vendor Tree (Branch: thirteen) - Eng katta fayl shu, manual yuklash xavfsiz
+          git clone --depth=1 https://github.com/sayann70/vendor_xiaomi_spes -b thirteen vendor/xiaomi/spes
+          
+          echo "Drayverlar joylandi!"
 
       - name: Start Build
         run: |
@@ -49,3 +57,4 @@ jobs:
           . build/envsetup.sh
           lunch arrow_spes-userdebug
           mka bacon -j$(nproc --all)
+          
