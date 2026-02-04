@@ -1,4 +1,4 @@
-name: Spes Builder (Coduxer-Arrow)
+name: Spes Builder (Universal-Arrow)
 on:
   workflow_dispatch:
 
@@ -13,7 +13,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y bc gperf zip curl libxml2-utils build-essential git-core python3 rsync
-          # GitHub-da 30GB+ joy ochish uchun keraksiz narsalarni o'chiramiz
           sudo rm -rf /usr/share/dotnet /etc/mysql /usr/local/lib/android /opt/ghc
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
@@ -25,20 +24,22 @@ jobs:
           git config --global user.email "build@github.com"
           git config --global user.name "Builder"
           mkdir ~/rom && cd ~/rom
-          # ArrowOS 13.1 manbasi
           repo init -u https://github.com/ArrowOS/android_manifest.git -b arrow-13.1 --depth=1
           repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
 
-      - name: Clone Coduxer Trees
+      - name: Clone Stable Trees
         run: |
           cd ~/rom
-          # Eski drayverlar papkasini tozalab tashlaymiz
           rm -rf device/xiaomi/spes kernel/xiaomi/spes vendor/xiaomi/spes
           
-          # Coduxer drayverlarini asosiy branch orqali yuklash (xatolik bermaydi)
+          # Device Tree (Coduxer ochiq qismi)
           git clone --depth=1 https://github.com/coduxer/android_device_xiaomi_spes device/xiaomi/spes
-          git clone --depth=1 https://github.com/coduxer/android_kernel_xiaomi_spes kernel/xiaomi/spes
-          git clone --depth=1 https://github.com/coduxer/android_vendor_xiaomi_spes vendor/xiaomi/spes
+          
+          # Kernel (Jabiyeff - bu ochiq va ishlaydi)
+          git clone --depth=1 https://github.com/Jabiyeff/android_kernel_xiaomi_spes kernel/xiaomi/spes
+          
+          # Vendor (Jabiyeff - bu ham ochiq)
+          git clone --depth=1 https://github.com/Jabiyeff/android_vendor_xiaomi_spes vendor/xiaomi/spes
 
       - name: Start Build
         run: |
