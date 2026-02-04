@@ -1,6 +1,6 @@
 name: Spes ROM Builder (Jabiyeff)
 on:
-  workflow_dispatch: # Build-ni qo'lda boshlash tugmasi
+  workflow_dispatch:
 
 jobs:
   build:
@@ -9,38 +9,38 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: System Setup (Serverni tayyorlash)
+      - name: System Setup
         run: |
           sudo apt-get update
           sudo apt-get install -y bc gperf zip curl libxml2-utils build-essential git-core python3 rsync
-          # Repo asbobini o'rnatish
-          mkdir ~/bin
+          # Repo vositasini to'g'ri o'rnatish
+          mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
-          export PATH=~/bin:$PATH
+          sudo ln -sf ~/bin/repo /usr/bin/repo
 
-      - name: ROM Source Sync (AwakenOS)
+      - name: ROM Source Sync
         run: |
-          export PATH=~/bin:$PATH
+          # Git sozlamalari shart
+          git config --global user.email "build@github.com"
+          git config --global user.name "Builder"
           mkdir ~/rom && cd ~/rom
-          repo init -u https://github.com/Awaken-OS/android_manifest -b triton
+          # Manifestni qayta ko'rsatamiz (--depth=1 tezlashtiradi)
+          repo init -u https://github.com/Awaken-OS/android_manifest -b triton --depth=1
           repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
 
-      - name: Clone Jabiyeff Trees (Device, Kernel, Vendor)
+      - name: Clone Jabiyeff Trees
         run: |
           cd ~/rom
-          # Device Tree
           git clone https://github.com/Jabiyeff/android_device_xiaomi_spes -b 13 device/xiaomi/spes
-          # Kernel Tree
           git clone https://github.com/Jabiyeff/android_kernel_xiaomi_spes -b 13 kernel/xiaomi/spes
-          # Vendor Tree
           git clone https://github.com/Jabiyeff/android_vendor_xiaomi_spes -b 13 vendor/xiaomi/spes
 
-      - name: Start Build (Pishirish)
+      - name: Start Build
         run: |
-          export PATH=~/bin:$PATH
           cd ~/rom
-          source build/envsetup.sh
+          export ALLOW_MISSING_DEPENDENCIES=true
+          . build/envsetup.sh
           lunch awaken_spes-userdebug
           mka bacon -j$(nproc --all)
           
