@@ -13,7 +13,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y bc gperf zip curl libxml2-utils build-essential git-core python3 rsync
-          # GitHub keraksiz fayllarini o'chirib 30GB+ joy ochamiz
+          # GitHub-da 30GB+ joy ochish uchun keraksiz narsalarni o'chiramiz
           sudo rm -rf /usr/share/dotnet /etc/mysql /usr/local/lib/android /opt/ghc
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
@@ -32,10 +32,13 @@ jobs:
       - name: Clone Coduxer Trees
         run: |
           cd ~/rom
-          # Coduxer drayverlarini yuklash
-          git clone https://github.com/coduxer/android_device_xiaomi_spes -b arrow-13.1 device/xiaomi/spes
-          git clone https://github.com/coduxer/android_kernel_xiaomi_spes --depth=1 kernel/xiaomi/spes
-          git clone https://github.com/coduxer/android_vendor_xiaomi_spes --depth=1 vendor/xiaomi/spes
+          # Eski drayverlar papkasini tozalab tashlaymiz
+          rm -rf device/xiaomi/spes kernel/xiaomi/spes vendor/xiaomi/spes
+          
+          # Coduxer drayverlarini asosiy branch orqali yuklash (xatolik bermaydi)
+          git clone --depth=1 https://github.com/coduxer/android_device_xiaomi_spes device/xiaomi/spes
+          git clone --depth=1 https://github.com/coduxer/android_kernel_xiaomi_spes kernel/xiaomi/spes
+          git clone --depth=1 https://github.com/coduxer/android_vendor_xiaomi_spes vendor/xiaomi/spes
 
       - name: Start Build
         run: |
@@ -45,3 +48,4 @@ jobs:
           . build/envsetup.sh
           lunch arrow_spes-userdebug
           mka bacon -j$(nproc --all)
+          
