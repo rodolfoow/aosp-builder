@@ -1,4 +1,4 @@
-name: Spes Builder (Arrow-GAPPS)
+name: Spes Builder (Coduxer-Arrow)
 on:
   workflow_dispatch:
 
@@ -13,8 +13,8 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y bc gperf zip curl libxml2-utils build-essential git-core python3 rsync
-          # Diskni tozalash (xotira yetishi uchun)
-          sudo rm -rf /usr/share/dotnet /etc/mysql /usr/local/lib/android
+          # GitHub keraksiz fayllarini o'chirib 30GB+ joy ochamiz
+          sudo rm -rf /usr/share/dotnet /etc/mysql /usr/local/lib/android /opt/ghc
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
@@ -25,16 +25,17 @@ jobs:
           git config --global user.email "build@github.com"
           git config --global user.name "Builder"
           mkdir ~/rom && cd ~/rom
-          # MUHIM: Faqat ArrowOS 13.1 ishlatamiz
+          # ArrowOS 13.1 manbasi
           repo init -u https://github.com/ArrowOS/android_manifest.git -b arrow-13.1 --depth=1
           repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
 
-      - name: Clone Jabiyeff Trees
+      - name: Clone Coduxer Trees
         run: |
           cd ~/rom
-          git clone https://github.com/Jabiyeff/android_device_xiaomi_spes -b 13 device/xiaomi/spes
-          git clone https://github.com/Jabiyeff/android_kernel_xiaomi_spes -b 13 kernel/xiaomi/spes
-          git clone https://github.com/Jabiyeff/android_vendor_xiaomi_spes -b 13 vendor/xiaomi/spes
+          # Coduxer drayverlarini yuklash
+          git clone https://github.com/coduxer/android_device_xiaomi_spes -b arrow-13.1 device/xiaomi/spes
+          git clone https://github.com/coduxer/android_kernel_xiaomi_spes --depth=1 kernel/xiaomi/spes
+          git clone https://github.com/coduxer/android_vendor_xiaomi_spes --depth=1 vendor/xiaomi/spes
 
       - name: Start Build
         run: |
@@ -44,4 +45,3 @@ jobs:
           . build/envsetup.sh
           lunch arrow_spes-userdebug
           mka bacon -j$(nproc --all)
-          
