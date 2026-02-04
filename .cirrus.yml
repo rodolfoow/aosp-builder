@@ -1,9 +1,8 @@
 env:
   CIRRUS_WORKING_DIR: /tmp/rom
-  DEVICE: spes
 
 task:
-  name: "PixelExperience Build for Spes"
+  name: "Redmi Note 11 (spes) PixelExperience Build"
   timeout_in: 120m
   container:
     image: apon77/aosp:latest
@@ -15,6 +14,7 @@ task:
     - git config --global user.name "Builder"
     - repo init -u https://github.com/PixelExperience/manifest.git -b thirteen --depth=1
     - mkdir -p .repo/local_manifests
+    # Redmi Note 11 (spes) uchun maxsus manifest
     - |
       cat <<EOF > .repo/local_manifests/spes.xml
       <?xml version="1.0" encoding="UTF-8"?>
@@ -26,7 +26,6 @@ task:
     - repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
 
   build_script:
-    - export ALLOW_MISSING_DEPENDENCIES=true
     - . build/envsetup.sh
     - lunch aosp_spes-userdebug
     - mka bacon -j$(nproc --all)
