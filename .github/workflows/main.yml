@@ -1,4 +1,4 @@
-name: Spes Builder (Universal-Arrow)
+name: Jabiyeff Spes Builder
 on:
   workflow_dispatch:
 
@@ -25,21 +25,20 @@ jobs:
           git config --global user.name "Builder"
           mkdir ~/rom && cd ~/rom
           repo init -u https://github.com/ArrowOS/android_manifest.git -b arrow-13.1 --depth=1
+          
+          # Jabiyeff uchun to'liq manifest
+          mkdir -p .repo/local_manifests
+          cat <<EOF > .repo/local_manifests/spes.xml
+          <?xml version="1.0" encoding="UTF-8"?>
+          <manifest>
+            <project name="Jabiyeff/android_device_xiaomi_spes" path="device/xiaomi/spes" remote="github" revision="13" />
+            <project name="Jabiyeff/android_kernel_xiaomi_spes" path="kernel/xiaomi/spes" remote="github" revision="13" />
+            <project name="Jabiyeff/kernel_xiaomi_sm6225" path="kernel/xiaomi/sm6225" remote="github" revision="13" />
+            <project name="Jabiyeff/android_vendor_xiaomi_spes" path="vendor/xiaomi/spes" remote="github" revision="13" />
+          </manifest>
+          EOF
+          
           repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
-
-      - name: Clone Stable Trees
-        run: |
-          cd ~/rom
-          rm -rf device/xiaomi/spes kernel/xiaomi/spes vendor/xiaomi/spes
-          
-          # Device Tree (Coduxer ochiq qismi)
-          git clone --depth=1 https://github.com/coduxer/android_device_xiaomi_spes device/xiaomi/spes
-          
-          # Kernel (Jabiyeff - bu ochiq va ishlaydi)
-          git clone --depth=1 https://github.com/Jabiyeff/android_kernel_xiaomi_spes kernel/xiaomi/spes
-          
-          # Vendor (Jabiyeff - bu ham ochiq)
-          git clone --depth=1 https://github.com/Jabiyeff/android_vendor_xiaomi_spes vendor/xiaomi/spes
 
       - name: Start Build
         run: |
