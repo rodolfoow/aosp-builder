@@ -1,4 +1,4 @@
-name: Spes ROM Builder (Jabiyeff)
+name: Spes ROM Builder (ArrowOS-GAPPS)
 on:
   workflow_dispatch:
 
@@ -13,20 +13,18 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y bc gperf zip curl libxml2-utils build-essential git-core python3 rsync
-          # Repo vositasini to'g'ri o'rnatish
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
           sudo ln -sf ~/bin/repo /usr/bin/repo
 
-      - name: ROM Source Sync
+      - name: ROM Source Sync (ArrowOS 13.1)
         run: |
-          # Git sozlamalari shart
-          git config --global user.email "build@github.com"
+          git config --global user.email "builder@github.com"
           git config --global user.name "Builder"
           mkdir ~/rom && cd ~/rom
-          # Manifestni qayta ko'rsatamiz (--depth=1 tezlashtiradi)
-          repo init -u https://github.com/Awaken-OS/android_manifest -b triton --depth=1
+          # ArrowOS 13.1 (Android 13)
+          repo init -u https://github.com/ArrowOS/android_manifest.git -b arrow-13.1 --depth=1
           repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
 
       - name: Clone Jabiyeff Trees
@@ -36,11 +34,13 @@ jobs:
           git clone https://github.com/Jabiyeff/android_kernel_xiaomi_spes -b 13 kernel/xiaomi/spes
           git clone https://github.com/Jabiyeff/android_vendor_xiaomi_spes -b 13 vendor/xiaomi/spes
 
-      - name: Start Build
+      - name: Start Build (GAPPS Included)
         run: |
           cd ~/rom
           export ALLOW_MISSING_DEPENDENCIES=true
+          # GAPPS yig'ish buyrug'i
+          export ARROW_GAPPS=true
           . build/envsetup.sh
-          lunch awaken_spes-userdebug
+          lunch arrow_spes-userdebug
           mka bacon -j$(nproc --all)
           
