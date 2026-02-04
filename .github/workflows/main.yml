@@ -1,0 +1,46 @@
+name: Spes ROM Builder (Jabiyeff)
+on:
+  workflow_dispatch: # Build-ni qo'lda boshlash tugmasi
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: System Setup (Serverni tayyorlash)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc gperf zip curl libxml2-utils build-essential git-core python3 rsync
+          # Repo asbobini o'rnatish
+          mkdir ~/bin
+          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
+          chmod a+x ~/bin/repo
+          export PATH=~/bin:$PATH
+
+      - name: ROM Source Sync (AwakenOS)
+        run: |
+          export PATH=~/bin:$PATH
+          mkdir ~/rom && cd ~/rom
+          repo init -u https://github.com/Awaken-OS/android_manifest -b triton
+          repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
+
+      - name: Clone Jabiyeff Trees (Device, Kernel, Vendor)
+        run: |
+          cd ~/rom
+          # Device Tree
+          git clone https://github.com/Jabiyeff/android_device_xiaomi_spes -b 13 device/xiaomi/spes
+          # Kernel Tree
+          git clone https://github.com/Jabiyeff/android_kernel_xiaomi_spes -b 13 kernel/xiaomi/spes
+          # Vendor Tree
+          git clone https://github.com/Jabiyeff/android_vendor_xiaomi_spes -b 13 vendor/xiaomi/spes
+
+      - name: Start Build (Pishirish)
+        run: |
+          export PATH=~/bin:$PATH
+          cd ~/rom
+          source build/envsetup.sh
+          lunch awaken_spes-userdebug
+          mka bacon -j$(nproc --all)
+          
