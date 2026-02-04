@@ -1,60 +1,54 @@
-name: Sayann70 Manual Clone Build
+name: Redmi Note 11 Spes Build
+
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Buildni qo'lda boshlash uchun
 
 jobs:
   build:
     runs-on: ubuntu-22.04
     steps:
-      - name: Checkout
-        uses: actions/checkout@v3
+      - name: Maximize Build Space
+        uses: easimon/maximize-build-space@main
+        with:
+          root-reserve-mb: 512
+          swap-size-mb: 10240 # 10GB Swap qo'shish (RAM yetishi uchun)
+          remove-dotnet: 'true'
+          remove-android: 'true'
+          remove-haskell: 'true'
 
-      - name: Cleanup Space
+      - name: Install Dependencies
         run: |
-          sudo apt-get update
-          sudo apt-get install -y bc gperf zip curl libxml2-utils build-essential git-core python3 rsync
-          # GitHub runnerda joyni tozalash (Eng muhim qism)
-          sudo rm -rf /usr/share/dotnet /etc/mysql /usr/local/lib/android /opt/ghc
-          docker rmi $(docker images -q) 2>/dev/null || true
-          
-      - name: Setup Repo
-        run: |
-          mkdir -p ~/bin
-          curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
-          chmod a+x ~/bin/repo
-          sudo ln -sf ~/bin/repo /usr/bin/repo
-          git config --global user.email "build@github.com"
-          git config --global user.name "Builder"
+          sudo apt update
+          sudo apt install -y bc bison build-essential ccache curl flex g++-multilib gcc-multilib git gnupg gperf lib32ncurses5-dev lib32readline-dev lib32z1-dev liblz4-tool libncurses5-dev libsdl1.2-dev libssl-dev libxml2 libxml2-utils lzop pngcrush rsync schedtool squashfs-tools xsltproc zip zlib1g-dev python3
 
-      - name: Clone Sources Manually
+      - name: Sync ROM
         run: |
           mkdir ~/rom && cd ~/rom
-          # 1. ArrowOS bazasini yuklash
-          repo init -u https://github.com/ArrowOS/android_manifest.git -b arrow-13.1 --depth=1
+          git config --global user.email "build@github.com"
+          git config --global user.name "Builder"
+          repo init -u https://github.com/PixelExperience/manifest.git -b thirteen --depth=1
+          mkdir -p .repo/local_manifests
+          cat <<EOF > .repo/local_manifests/spes.xml
+          <?xml version="1.0" encoding="UTF-8"?>
+          <manifest>
+            <project name="sayann70/device_xiaomi_spes" path="device/xiaomi/spes" remote="github" revision="13" />
+            <project name="sayann70/kernel_xiaomi_spes" path="kernel/xiaomi/spes" remote="github" revision="thirteen" />
+            <project name="sayann70/vendor_xiaomi_spes" path="vendor/xiaomi/spes" remote="github" revision="thirteen" />
+          </manifest>
+          EOF
           repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
-          
-          # 2. DRAYVERLARNI QO'LDA YUKLASH (Manifestsiz)
-          # Bu usul "Network failed" xatosini oldini oladi
-          
-          echo "Drayverlar yuklanmoqda..."
-          
-          # Device Tree (Branch: 13)
-          git clone --depth=1 https://github.com/sayann70/device_xiaomi_spes -b 13 device/xiaomi/spes
-          
-          # Kernel Tree (Branch: thirteen) - Almashgan ekran uchun
-          git clone --depth=1 https://github.com/sayann70/kernel_xiaomi_spes -b thirteen kernel/xiaomi/spes
-          
-          # Vendor Tree (Branch: thirteen) - Eng katta fayl shu, manual yuklash xavfsiz
-          git clone --depth=1 https://github.com/sayann70/vendor_xiaomi_spes -b thirteen vendor/xiaomi/spes
-          
-          echo "Drayverlar joylandi!"
 
-      - name: Start Build
+      - name: Build ROM
         run: |
           cd ~/rom
-          export ARROW_GAPPS=true
-          export ALLOW_MISSING_DEPENDENCIES=true
           . build/envsetup.sh
-          lunch arrow_spes-userdebug
+          lunch aosp_spes-userdebug
+          export ALLOW_MISSING_DEPENDENCIES=true
           mka bacon -j$(nproc --all)
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PixelExperience_Spes
+          path: ~/rom/out/target/product/spes/*.zip
           
