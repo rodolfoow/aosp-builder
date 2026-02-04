@@ -1,4 +1,4 @@
-name: Spes ROM Builder (ArrowOS-GAPPS)
+name: Spes Builder (Arrow-GAPPS)
 on:
   workflow_dispatch:
 
@@ -9,21 +9,23 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      - name: System Setup
+      - name: Cleanup and Setup
         run: |
           sudo apt-get update
           sudo apt-get install -y bc gperf zip curl libxml2-utils build-essential git-core python3 rsync
+          # Diskni tozalash (xotira yetishi uchun)
+          sudo rm -rf /usr/share/dotnet /etc/mysql /usr/local/lib/android
           mkdir -p ~/bin
           curl https://storage.googleapis.com/git-repo-downloads/repo > ~/bin/repo
           chmod a+x ~/bin/repo
           sudo ln -sf ~/bin/repo /usr/bin/repo
 
-      - name: ROM Source Sync (ArrowOS 13.1)
+      - name: ROM Source Sync
         run: |
-          git config --global user.email "builder@github.com"
+          git config --global user.email "build@github.com"
           git config --global user.name "Builder"
           mkdir ~/rom && cd ~/rom
-          # ArrowOS 13.1 (Android 13)
+          # MUHIM: Faqat ArrowOS 13.1 ishlatamiz
           repo init -u https://github.com/ArrowOS/android_manifest.git -b arrow-13.1 --depth=1
           repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags
 
@@ -34,12 +36,11 @@ jobs:
           git clone https://github.com/Jabiyeff/android_kernel_xiaomi_spes -b 13 kernel/xiaomi/spes
           git clone https://github.com/Jabiyeff/android_vendor_xiaomi_spes -b 13 vendor/xiaomi/spes
 
-      - name: Start Build (GAPPS Included)
+      - name: Start Build
         run: |
           cd ~/rom
-          export ALLOW_MISSING_DEPENDENCIES=true
-          # GAPPS yig'ish buyrug'i
           export ARROW_GAPPS=true
+          export ALLOW_MISSING_DEPENDENCIES=true
           . build/envsetup.sh
           lunch arrow_spes-userdebug
           mka bacon -j$(nproc --all)
